@@ -1,0 +1,381 @@
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 1
+printf.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     org 100h
+      4
+      5	0100			     start:
+      6	0100			     .data
+      7	0000  50 4F 4C 54 4F 52	41+  msg db 'POLTORASHKA %z %x %d %o %c	%s %b RULEZ $',	0	; Our string
+      8	      53 48 4B 41 20 25	7A+
+      9	      20 25 78 20 25 64	20+
+     10	      25 6F 20 25 63 20	25+
+     11	      73 20 25 62 20 52	55+
+     12	      4C 45 5A 20 24 00
+     13	0029  54 48 49 53 20 69	73+  string1 db	'THIS is COOL!!!', 0
+     14	      20 43 4F 4F 4C 21	21+
+     15	      21 00
+     16
+     17	0039			     .code
+     18	0100  52		     push dx
+     19	0101  BB 0029r		     mov bx, offset string1
+     20	0104  53		     push bx
+     21	0105  51		     push cx
+     22	0106  50 55 8B EC C7 46	02+  push 120
+     23	      0078 5D
+     24	0110  50 55 8B EC C7 46	02+  push 120
+     25	      0078 5D
+     26	011A  50 55 8B EC C7 46	02+  push 120
+     27	      0078 5D
+     28	0124  BB 0000r		     mov bx, offset msg
+     29	0127  53		     push bx
+     30	0128  E8 000C		     call printf
+     31	012B  5B 5B 5B 5B 5B 5B	5B   pop bx bx bx bx bx	bx bx
+     32
+     33	0132  B8 4C00		     mov ax, 4c00h
+     34	0135  CD 21		     int 21h
+     35
+     36	0137			     Printf proc
+     37	0137  8B EC			 mov bp, sp
+     38	0139  8B 7E 02			 mov di, [bp + 2]
+     39	013C  83 C5 02			 add bp, 2
+     40
+     41	013F			     Print_next:
+     42	013F  8A 15			 mov dl, [di]
+     43
+     44	0141  80 FA 00			 cmp dl, 0
+     45	0144  74 35			 je END_PRINTF
+     46
+     47	0146  80 FA 25			 cmp dl, '%'
+     48	0149  74 07			 je SPECIFIER
+     49
+     50	014B  B4 02			 mov ah, 02h
+     51	014D  CD 21			 int 21h
+     52
+     53	014F  47			 inc di
+     54	0150  EB ED			 jmp Print_next
+     55
+     56	0152			     SPECIFIER:
+     57	0152  8A 55 01			 mov dl, [di + 1]
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 2
+printf.asm
+
+
+
+     58
+     59	0155  80 FA 63			 cmp dl, 'c'
+     60	0158  74 28			 je CHAR_PRINT
+     61
+     62	015A  80 FA 73			 cmp dl, 's'
+     63	015D  74 32			 je STRING_PRINT
+     64
+     65	015F  80 FA 64			 cmp dl, 'd'
+     66	0162  74 3B			 je DEC_PRINT
+     67
+     68	0164  EB 50 90			 jmp POW2
+     69	0167			     Continue:
+     70
+     71	0167  80 FA 00			 cmp dl, 0
+     72	016A  74 10			 je PRINT_AND_END
+     73
+     74	016C  52			 push dx
+     75	016D  B2 25			 mov dl, '%'
+     76	016F  B4 02			 mov ah, 02h
+     77	0171  CD 21			 int 21h
+     78
+     79	0173  5A			 pop dx
+     80	0174  CD 21			 int 21h
+     81
+     82	0176  83 C7 02			 add di, 2
+     83	0179  EB C4			 jmp Print_next
+     84
+     85	017B			     END_PRINTF:
+     86	017B  C3			 ret
+     87
+     88	017C			     PRINT_AND_END:
+     89
+     90	017C  B2 25			 mov dl, '%'
+     91	017E  B4 02			 mov ah, 02h
+     92	0180  CD 21			 int 21h
+     93
+     94	0182			     CHAR_PRINT:
+     95	0182  83 C5 02			 add bp, 2
+     96	0185  8B 56 00			 mov dx, [bp]
+     97
+     98	0188  B4 02			 mov ah, 02h
+     99	018A  CD 21			 int 21h
+    100
+    101	018C  83 C7 02			 add di, 2
+    102	018F  EB AE			 jmp Print_next
+    103
+    104	0191			     STRING_PRINT:
+    105
+    106	0191  83 C5 02			 add bp, 2
+    107	0194  8B 5E 00			 mov bx, [bp]
+    108
+    109	0197  E8 007E			 call Print_str
+    110
+    111	019A  83 C7 02			 add di, 2
+    112	019D  EB A0			 jmp Print_next
+    113
+    114	019F			     DEC_PRINT:
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 3
+printf.asm
+
+
+
+    115
+    116	019F  83 C5 02			 add bp, 2
+    117	01A2  8B 46 00			 mov ax, [bp]
+    118
+    119	01A5  55 52 57			 push bp dx di
+    120	01A8  BF 000A			 mov di, 10
+    121	01AB  E8 0079			 call Dec_convert
+    122
+    123	01AE  5F 5A 5D			 pop di	dx bp
+    124
+    125	01B1  83 C7 02			 add di, 2
+    126	01B4  EB 89			 jmp Print_next
+    127
+    128	01B6			     POW2:
+    129	01B6  80 FA 78			 cmp dl, 'x'
+    130	01B9  74 0C			 je HEX_PRINT
+    131
+    132	01BB  80 FA 6F			 cmp dl, 'o'
+    133	01BE  74 22			 je OCTAL_PRINT
+    134
+    135	01C0  80 FA 62			 cmp dl, 'b'
+    136	01C3  74 38			 je BIN_PRINT
+    137
+    138	01C5  EB A0			 jmp Continue
+    139
+    140	01C7			     HEX_PRINT:
+    141
+    142	01C7  83 C5 02			 add bp, 2
+    143	01CA  8B 46 00			 mov ax, [bp]
+    144
+    145	01CD  55 52 57			 push bp dx di
+    146	01D0  BF 000F			 mov di, 1111b
+    147	01D3  BA 0004			 mov dx, 4
+    148	01D6  E8 0071			 call Hex_convert
+    149
+    150	01D9  5F 5A 5D			 pop di	dx bp
+    151
+    152	01DC  83 C7 02			 add di, 2
+    153	01DF  E9 FF5D			 jmp Print_next
+    154
+    155	01E2			     OCTAL_PRINT:
+    156
+    157	01E2  83 C5 02			 add bp, 2
+    158	01E5  8B 46 00			 mov ax, [bp]
+    159
+    160	01E8  55 52 57			 push bp dx di
+    161	01EB  BF 0007			 mov di, 111b
+    162	01EE  BA 0003			 mov dx, 3
+    163	01F1  E8 0056			 call Hex_convert
+    164
+    165	01F4  5F 5A 5D			 pop di	dx bp
+    166
+    167	01F7  83 C7 02			 add di, 2
+    168	01FA  E9 FF42			 jmp Print_next
+    169
+    170	01FD			     BIN_PRINT:
+    171
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 4
+printf.asm
+
+
+
+    172	01FD  83 C5 02			 add bp, 2
+    173	0200  8B 46 00			 mov ax, [bp]
+    174
+    175	0203  55 52 57			 push bp dx di
+    176	0206  BF 0001			 mov di, 1b
+    177	0209  BA 0001			 mov dx, 1
+    178	020C  E8 003B			 call Hex_convert
+    179
+    180	020F  5F 5A 5D			 pop di	dx bp
+    181
+    182	0212  83 C7 02			 add di, 2
+    183	0215  E9 FF27			 jmp Print_next
+    184
+    185	0218			     endp
+    186
+    187	0218			     Print_str proc
+    188
+    189	0218  B4 02			 mov ah, 02h
+    190
+    191	021A			     begin_loop:
+    192	021A  8A 17			 mov dl, [bx]
+    193
+    194	021C  80 FA 00			 cmp dl, 0
+    195	021F  74 05			 je Print_str_end
+    196
+    197	0221  CD 21			 int 21h
+    198	0223  43			 inc bx
+    199
+    200	0224  EB F4			 jmp begin_loop
+    201
+    202	0226			     Print_str_end:
+    203	0226  C3			 ret
+    204	0227			     endp
+    205
+    206				     ;------------------------------------------------------
+    207				     ; Print dec (or other system foundation in	register di) representation of number located in ax
+    208				     ; Print begin with	point (50, 16)
+    209				     ; Use jmp to Print	(label in Dec_convert proc)
+    210				     ; Entry: ax - our number
+    211				     ;	      es - ptr to 0b800h
+    212				     ;	      di - system foundation
+    213				     ;
+    214				     ; Destr: ax, bx, cx. di, dl
+    215				     ;------------------------------------------------------
+    216	0227			     Dec_convert proc
+    217
+    218	0227  BB 0000			 mov bx, 0
+    219
+    220	022A			     Deg:
+    221
+    222	022A  BA 0000			 mov dx, 0
+    223	022D  8B CF			 mov cx, di
+    224	022F  F7 F1			 div cx
+    225	0231  52			 push dx
+    226	0232  43			 inc bx
+    227
+    228	0233  3D 0000			 cmp ax, 0
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 5
+printf.asm
+
+
+
+    229	0236  75 F2			 jne Deg
+    230
+    231	0238  8B CB			 mov cx, bx
+    232
+    233				     ;------------------------------------------------------
+    234				     ; Print the digits	from Stack
+    235				     ; Entry: cx - number of digits
+    236				     ;	      es - ptr to 0b800h (video	ram)
+    237				     ;	      bx - offset to the print location
+    238				     ;
+    239				     ; Destr: cx, di, bx
+    240				     ;------------------------------------------------------
+    241	023A			     Print:
+    242
+    243	023A  5F			 pop di
+    244	023B  8A 95 025Er		 mov dl, byte ptr [offset System + di]
+    245
+    246	023F  B4 02			 mov ah, 02h
+    247	0241  CD 21			 int 21h
+    248
+    249	0243  49			 dec cx
+    250	0244  83 F9 00			 cmp cx, 0
+    251	0247  75 F1			 jne Print
+    252
+    253	0249  C3			 ret
+    254	024A			     endp
+    255				     ;======================================================
+    256
+    257				     ;------------------------------------------------------
+    258				     ; Print hex (or other system foundation pow 2) representation of number located in	ax
+    259				     ; Print begin with	point on address (in bx)
+    260				     ; Use jmp to Print	(label in Dec_convert proc)
+    261				     ; Entry: ax - our number
+    262				     ;	      di - byte	mask
+    263				     ;	      dx - byte	shift
+    264				     ;
+    265				     ; Destr: ax, bx, cx. di, dl, si
+    266				     ;------------------------------------------------------
+    267	024A			     Hex_convert proc
+    268
+    269	024A			     Hex:
+    270	024A  8B D8			 mov bx, ax
+    271	024C  23 DF			 and bx, di
+    272	024E  53			 push bx
+    273	024F  51			 push cx
+    274	0250  8A CA			 mov cl, dl
+    275	0252  D3 E8			 shr ax, cl
+    276	0254  59			 pop cx
+    277	0255  41			 inc cx
+    278
+    279	0256  3D 0000			 cmp ax, 0
+    280	0259  75 EF			 jne Hex
+    281
+    282	025B  EB DD			 jmp Print
+    283
+    284	025D  C3			 ret
+    285	025E				 endp
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 6
+printf.asm
+
+
+
+    286				     ;==================================================
+    287
+    288				     ;;
+    289				     ;	 STRING	FOR QUICK CONVERTETION
+    290				     ;;
+    291	025E  30 31 32 33 34 35	36+  System db '0123456789ABCDEF$'
+    292	      37 38 39 41 42 43	44+
+    293	      45 46 24
+    294
+    295				     end start
+Turbo Assembler	 Version 4.1	    02/26/21 20:56:14	    Page 7
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/26/21"
+??FILENAME			  Text	 "printf  "
+??TIME				  Text	 "20:56:13"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PRINTF
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+BEGIN_LOOP			  Near	 DGROUP:021A
+BIN_PRINT			  Near	 DGROUP:01FD
+CHAR_PRINT			  Near	 DGROUP:0182
+CONTINUE			  Near	 DGROUP:0167
+DEC_CONVERT			  Near	 DGROUP:0227
+DEC_PRINT			  Near	 DGROUP:019F
+DEG				  Near	 DGROUP:022A
+END_PRINTF			  Near	 DGROUP:017B
+HEX				  Near	 DGROUP:024A
+HEX_CONVERT			  Near	 DGROUP:024A
+HEX_PRINT			  Near	 DGROUP:01C7
+MSG				  Byte	 DGROUP:0000
+OCTAL_PRINT			  Near	 DGROUP:01E2
+POW2				  Near	 DGROUP:01B6
+PRINT				  Near	 DGROUP:023A
+PRINTF				  Near	 DGROUP:0137
+PRINT_AND_END			  Near	 DGROUP:017C
+PRINT_NEXT			  Near	 DGROUP:013F
+PRINT_STR			  Near	 DGROUP:0218
+PRINT_STR_END			  Near	 DGROUP:0226
+SPECIFIER			  Near	 DGROUP:0152
+START				  Near	 DGROUP:0100
+STRING1				  Byte	 DGROUP:0029
+STRING_PRINT			  Near	 DGROUP:0191
+SYSTEM				  Byte	 DGROUP:025E
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0039 Word	  Public  DATA
+  _TEXT				  16  026F Word	  Public  CODE
+
